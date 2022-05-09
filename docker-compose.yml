@@ -539,6 +539,36 @@ services:
       - _APP_INFLUXDB_HOST
       - _APP_INFLUXDB_PORT
 
+  appwrite-webhook-proxy:
+    image: meldiron/appwrite-webhook-proxy:v0.0.5
+    container_name: appwrite-webhook-proxy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.constraint-label-stack=appwrite"
+      - "traefik.docker.network=appwrite"
+      - "traefik.http.services.appwrite_webhook_proxy.loadbalancer.server.port=4444"
+      # http
+      - traefik.http.routers.appwrite_webhook_proxy_http.entrypoints=appwrite_web
+      - traefik.http.routers.appwrite_webhook_proxy_http.rule=PathPrefix(`/v1/webhook-proxy`)
+      - traefik.http.routers.appwrite_webhook_proxy_http.service=appwrite_webhook_proxy
+      # https
+      - traefik.http.routers.appwrite_webhook_proxy_https.entrypoints=appwrite_websecure
+      - traefik.http.routers.appwrite_webhook_proxy_https.rule=PathPrefix(`/v1/webhook-proxy`)
+      - traefik.http.routers.appwrite_webhook_proxy_https.service=appwrite_webhook_proxy
+      - traefik.http.routers.appwrite_webhook_proxy_https.tls=true
+      - traefik.http.routers.appwrite_webhook_proxy_https.tls.certresolver=dns
+    networks:
+      - appwrite
+    depends_on:
+      - appwrite
+    environment:
+      - WEBHOOK_PROXY_APPWRITE_ENDPOINT
+      - WEBHOOK_PROXY_APPWRITE_PROJECT_ID
+      - WEBHOOK_PROXY_APPWRITE_API_KEY
+      - WEBHOOK_PROXY_APPWRITE_FUNCTION_ID
+
+
 networks:
   gateway:
   appwrite:
